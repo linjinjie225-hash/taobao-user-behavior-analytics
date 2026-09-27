@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import re
 import subprocess
 from typing import Iterable
 
@@ -20,11 +21,6 @@ BLOCKED_EXTENSIONS = {
     ".jpeg",
 }
 PRIVATE_MARKERS = (
-    b"-----BEGIN " + b"PRIVATE KEY-----",
-    b"-----BEGIN " + b"RSA " + b"PRIVATE KEY-----",
-    b"-----BEGIN " + b"OPENSSH " + b"PRIVATE KEY-----",
-    b"-----BEGIN " + b"EC " + b"PRIVATE KEY-----",
-    b"-----BEGIN " + b"DSA " + b"PRIVATE KEY-----",
     b"gh" + b"p_",
     b"gh" + b"o_",
     b"gh" + b"u_",
@@ -34,6 +30,13 @@ PRIVATE_MARKERS = (
     b"AK" + b"IA",
     b"AS" + b"IA",
 )
+PRIVATE_KEY_HEADER = re.compile(
+    b"-----BEGIN "
+    + rb"(?:[A-Z0-9][A-Z0-9 -]{0,62} )?"
+    + b"PRIVATE "
+    + b"KEY-----"
+)
+MAX_PRIVATE_KEY_HEADER_BYTES = 96
 
 
 class PublicationGuardError(RuntimeError):
@@ -41,13 +44,18 @@ class PublicationGuardError(RuntimeError):
 
 
 def _contains_private_marker(content: bytes) -> bool:
-    return any(marker in content for marker in PRIVATE_MARKERS)
+    return bool(PRIVATE_KEY_HEADER.search(content)) or any(
+        marker in content for marker in PRIVATE_MARKERS
+    )
 
 
 def _file_contains_private_marker(path: Path, chunk_bytes: int) -> bool:
     """Scan a file with bounded memory, preserving matches across chunks."""
     chunk_bytes = max(1, min(64 * 1024, chunk_bytes))
-    overlap = max(len(marker) for marker in PRIVATE_MARKERS) - 1
+    overlap = max(
+        MAX_PRIVATE_KEY_HEADER_BYTES,
+        *(len(marker) for marker in PRIVATE_MARKERS),
+    ) - 1
     tail = b""
 
     with path.open("rb") as stream:

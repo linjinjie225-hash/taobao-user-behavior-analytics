@@ -71,6 +71,10 @@ def test_repository_scan_reads_untracked_nonignored_file(tmp_path: Path) -> None
     "credential",
     [
         pytest.param(b"-----BEGIN " + b"PRIVATE KEY-----", id="pem-generic"),
+        pytest.param(
+            b"-----BEGIN " + b"ENCRYPTED " + b"PRIVATE KEY-----",
+            id="pem-encrypted-pkcs8",
+        ),
         pytest.param(b"-----BEGIN " + b"RSA " + b"PRIVATE KEY-----", id="pem-rsa"),
         pytest.param(b"-----BEGIN " + b"OPENSSH " + b"PRIVATE KEY-----", id="pem-openssh"),
         pytest.param(b"-----BEGIN " + b"EC " + b"PRIVATE KEY-----", id="pem-ec"),
@@ -221,3 +225,12 @@ def test_scan_paths_allows_readme(tmp_path: Path) -> None:
     readme.write_text("# Safe public project\n", encoding="utf-8")
 
     assert scan_paths(tmp_path, [readme]) == []
+
+
+def test_scan_paths_allows_public_certificate(tmp_path: Path) -> None:
+    certificate = tmp_path / "certificate.pem"
+    certificate.write_bytes(
+        b"-----BEGIN " + b"CERTIFICATE-----\npublic-certificate-data\n"
+    )
+
+    assert scan_paths(tmp_path, [certificate]) == []
