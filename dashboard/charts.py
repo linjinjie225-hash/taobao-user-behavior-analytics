@@ -49,7 +49,7 @@ def activity_chart(
         go.Scatter(
             x=frame[x_column],
             y=frame["buy"],
-            name="购买量",
+            name="购买行为量",
             mode="lines+markers",
             line={"color": ORANGE, "width": 2},
             yaxis="y2",
@@ -58,7 +58,7 @@ def activity_chart(
     figure.update_layout(
         yaxis={"title": "行为量"},
         yaxis2={
-            "title": "购买量",
+            "title": "购买行为量",
             "overlaying": "y",
             "side": "right",
         },
@@ -108,6 +108,11 @@ def retention_chart(frame: pd.DataFrame) -> go.Figure:
 
 def category_chart(frame: pd.DataFrame) -> go.Figure:
     """Build a horizontal ranking of the twelve most-purchased categories."""
+    if frame.empty:
+        figure = go.Figure()
+        figure.update_layout(xaxis_title="购买行为量", yaxis_title="类目 ID")
+        return _finish(figure, "购买行为量最高的类目")
+
     ranked = (
         frame.nlargest(12, "buy")
         .sort_values("buy", ascending=True)
@@ -121,10 +126,16 @@ def category_chart(frame: pd.DataFrame) -> go.Figure:
         hover_data={
             "pv": True,
             "active_users": True,
-            "buy_to_pv_rate": True,
+            "buy_to_pv_rate": ":.1%",
         },
         color_discrete_sequence=[TEAL],
-        labels={"buy": "购买行为量", "category_id": "类目 ID"},
+        labels={
+            "buy": "购买行为量",
+            "category_id": "类目 ID",
+            "pv": "浏览行为量",
+            "active_users": "活跃用户数",
+            "buy_to_pv_rate": "购买/浏览转化率",
+        },
     )
     figure.update_traces(marker_color=TEAL)
     figure.update_layout(xaxis_title="购买行为量", yaxis_title="类目 ID")

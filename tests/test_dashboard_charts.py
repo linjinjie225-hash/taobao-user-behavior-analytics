@@ -1,4 +1,6 @@
 import pandas as pd
+import plotly.graph_objects as go
+import pytest
 
 from dashboard.charts import (
     activity_chart,
@@ -21,6 +23,8 @@ def test_activity_chart_contains_series_and_title() -> None:
 
     assert figure.data
     assert figure.layout.title.text == "每日活跃趋势"
+    assert figure.data[1].name == "购买行为量"
+    assert figure.layout.yaxis2.title.text == "购买行为量"
 
 
 def test_funnel_chart_contains_stage_coverage_data() -> None:
@@ -67,3 +71,38 @@ def test_category_chart_contains_purchase_data_in_reading_order() -> None:
 
     assert figure.data
     assert list(figure.data[0].y) == ["102", "101", "103"]
+    assert figure.layout.xaxis.title.text == "购买行为量"
+    hover_template = figure.data[0].hovertemplate
+    assert "浏览行为量" in hover_template
+    assert "活跃用户数" in hover_template
+    assert "购买/浏览转化率" in hover_template
+    assert ":.1%" in hover_template
+    assert "订单" not in hover_template
+
+
+@pytest.mark.parametrize(
+    ("builder", "columns"),
+    [
+        (
+            lambda frame: activity_chart(frame, "event_date", "每日活跃趋势"),
+            ["event_date", "events", "buy"],
+        ),
+        (
+            funnel_chart,
+            ["stage", "users", "vs_view_rate"],
+        ),
+        (
+            retention_chart,
+            ["day_offset", "retention_rate"],
+        ),
+        (
+            category_chart,
+            ["category_id", "pv", "buy", "active_users", "buy_to_pv_rate"],
+        ),
+    ],
+    ids=["activity", "funnel", "retention", "category"],
+)
+def test_chart_builders_accept_header_only_frames(builder, columns) -> None:
+    figure = builder(pd.DataFrame(columns=columns))
+
+    assert isinstance(figure, go.Figure)

@@ -7,6 +7,15 @@ import pytest
 from dashboard.data_loader import PortfolioDataError, load_portfolio_data
 
 
+TABLE_FILENAMES = (
+    "daily_metrics.csv",
+    "hourly_metrics.csv",
+    "user_funnel.csv",
+    "retention.csv",
+    "category_metrics.csv",
+)
+
+
 def write_fixture(root: Path) -> None:
     tables = root / "results" / "tables"
     tables.mkdir(parents=True)
@@ -185,3 +194,48 @@ def test_load_portfolio_data_wraps_invalid_csv_encoding(tmp_path: Path) -> None:
         load_portfolio_data(tmp_path)
 
     assert isinstance(exc_info.value.__cause__, UnicodeError)
+
+
+@pytest.mark.parametrize(
+    ("filename", "column", "value"),
+    [
+        ("daily_metrics.csv", "events", "many"),
+        ("daily_metrics.csv", "events", float("inf")),
+        ("retention.csv", "day_offset", -1),
+        ("retention.csv", "retention_rate", 1.2),
+    ],
+    ids=["malformed", "nonfinite", "negative", "rate-out-of-range"],
+)
+def test_load_portfolio_data_rejects_invalid_numeric_domains(
+    tmp_path: Path,
+    filename: str,
+    column: str,
+    value: object,
+) -> None:
+    write_fixture(tmp_path)
+    table_path = tmp_path / "results" / "tables" / filename
+    table = pd.read_csv(table_path)
+    table[column] = [value]
+    table.to_csv(table_path, index=False)
+
+    with pytest.raises(
+        PortfolioDataError,
+        match=rf"{filename}.*{column}",
+    ):
+        load_portfolio_data(tmp_path)
+
+
+def test_load_portfolio_data_preserves_header_only_tables(tmp_path: Path) -> None:
+    write_fixture(tmp_path)
+    tables_dir = tmp_path / "results" / "tables"
+    for filename in TABLE_FILENAMES:
+        table_path = tables_dir / filename
+        pd.read_csv(table_path).iloc[0:0].to_csv(table_path, index=False)
+
+    data = load_portfolio_data(tmp_path)
+
+    assert data.daily.empty
+    assert data.hourly.empty
+    assert data.funnel.empty
+    assert data.retention.empty
+    assert data.category.empty

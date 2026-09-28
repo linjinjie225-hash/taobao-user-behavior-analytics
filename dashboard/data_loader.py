@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import json
+from math import isfinite
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,27 @@ TABLE_SCHEMAS = {
     },
 }
 
+NONNEGATIVE_NUMERIC_COLUMNS = {
+    "daily_metrics.csv": {"events", "active_users", "buy"},
+    "hourly_metrics.csv": {"event_hour", "events", "active_users", "buy"},
+    "user_funnel.csv": {"users"},
+    "retention.csv": {"day_offset", "eligible_users", "retained_users"},
+    "category_metrics.csv": {
+        "pv",
+        "cart",
+        "fav",
+        "buy",
+        "active_users",
+        "events",
+    },
+}
+
+RATE_COLUMNS = {
+    "user_funnel.csv": {"vs_view_rate"},
+    "retention.csv": {"retention_rate"},
+    "category_metrics.csv": {"buy_to_pv_rate"},
+}
+
 REQUIRED_METRIC_SECTIONS = {
     "basic",
     "funnel",
@@ -51,6 +73,32 @@ REQUIRED_METRIC_SECTIONS = {
     "repeat_purchase",
     "data_quality",
 }
+
+
+def _validate_numeric_columns(table: pd.DataFrame, name: str) -> pd.DataFrame:
+    numeric_columns = NONNEGATIVE_NUMERIC_COLUMNS.get(name, set()) | RATE_COLUMNS.get(
+        name, set()
+    )
+    for column in sorted(numeric_columns):
+        converted = pd.to_numeric(table[column], errors="coerce")
+        if converted.isna().any() or not all(map(isfinite, converted)):
+            raise PortfolioDataError(
+                f"Invalid {name}; column {column} must contain finite numeric values"
+            )
+        if column in NONNEGATIVE_NUMERIC_COLUMNS.get(name, set()) and (
+            converted < 0
+        ).any():
+            raise PortfolioDataError(
+                f"Invalid {name}; column {column} must be nonnegative"
+            )
+        if column in RATE_COLUMNS.get(name, set()) and (
+            ((converted < 0) | (converted > 1)).any()
+        ):
+            raise PortfolioDataError(
+                f"Invalid {name}; column {column} must be between 0 and 1"
+            )
+        table[column] = converted
+    return table
 
 
 def _read_csv(root: Path, name: str) -> pd.DataFrame:
@@ -77,7 +125,7 @@ def _read_csv(root: Path, name: str) -> pd.DataFrame:
         raise PortfolioDataError(
             f"Invalid {name}; missing columns: {', '.join(sorted(missing))}"
         )
-    return table
+    return _validate_numeric_columns(table, name)
 
 
 def load_portfolio_data(root: Path) -> PortfolioData:
