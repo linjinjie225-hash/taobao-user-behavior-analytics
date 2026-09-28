@@ -113,5 +113,75 @@ def test_load_portfolio_data_wraps_invalid_metrics_json(tmp_path: Path) -> None:
     metrics_path.parent.mkdir(parents=True)
     metrics_path.write_text("{invalid", encoding="utf-8")
 
-    with pytest.raises(PortfolioDataError, match=r"results/metrics\.json"):
+    with pytest.raises(
+        PortfolioDataError, match=r"results/metrics\.json"
+    ) as exc_info:
         load_portfolio_data(tmp_path)
+
+    assert isinstance(exc_info.value.__cause__, json.JSONDecodeError)
+
+
+def test_load_portfolio_data_wraps_invalid_metrics_encoding(tmp_path: Path) -> None:
+    metrics_path = tmp_path / "results" / "metrics.json"
+    metrics_path.parent.mkdir(parents=True)
+    metrics_path.write_bytes(b"\xff")
+
+    with pytest.raises(
+        PortfolioDataError, match=r"results/metrics\.json"
+    ) as exc_info:
+        load_portfolio_data(tmp_path)
+
+    assert isinstance(exc_info.value.__cause__, UnicodeError)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        ["basic", "funnel", "retention", "repeat_purchase", "data_quality"],
+        None,
+        7,
+        "basic",
+    ],
+    ids=["list", "null", "number", "string"],
+)
+def test_load_portfolio_data_rejects_non_object_metrics(
+    tmp_path: Path, payload: object
+) -> None:
+    metrics_path = tmp_path / "results" / "metrics.json"
+    metrics_path.parent.mkdir(parents=True)
+    metrics_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(
+        PortfolioDataError, match=r"results/metrics\.json.*JSON object"
+    ):
+        load_portfolio_data(tmp_path)
+
+
+def test_load_portfolio_data_wraps_malformed_csv(tmp_path: Path) -> None:
+    write_fixture(tmp_path)
+    daily_path = tmp_path / "results" / "tables" / "daily_metrics.csv"
+    daily_path.write_text(
+        'event_date,events,active_users,buy\n"unterminated', encoding="utf-8"
+    )
+
+    with pytest.raises(
+        PortfolioDataError, match=r"results/tables/daily_metrics\.csv"
+    ) as exc_info:
+        load_portfolio_data(tmp_path)
+
+    assert isinstance(exc_info.value.__cause__, pd.errors.ParserError)
+
+
+def test_load_portfolio_data_wraps_invalid_csv_encoding(tmp_path: Path) -> None:
+    write_fixture(tmp_path)
+    daily_path = tmp_path / "results" / "tables" / "daily_metrics.csv"
+    daily_path.write_bytes(
+        b"event_date,events,active_users,buy\n\xff,10,4,2"
+    )
+
+    with pytest.raises(
+        PortfolioDataError, match=r"results/tables/daily_metrics\.csv"
+    ) as exc_info:
+        load_portfolio_data(tmp_path)
+
+    assert isinstance(exc_info.value.__cause__, UnicodeError)

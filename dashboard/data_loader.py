@@ -61,7 +61,17 @@ def _read_csv(root: Path, name: str) -> pd.DataFrame:
             "Run python src/run_pipeline.py."
         )
 
-    table = pd.read_csv(table_path)
+    try:
+        table = pd.read_csv(table_path)
+    except (
+        OSError,
+        UnicodeError,
+        pd.errors.ParserError,
+        pd.errors.EmptyDataError,
+    ) as exc:
+        raise PortfolioDataError(
+            f"Unable to read results/tables/{name}: {exc}"
+        ) from exc
     missing = TABLE_SCHEMAS[name] - set(table.columns)
     if missing:
         raise PortfolioDataError(
@@ -79,10 +89,14 @@ def load_portfolio_data(root: Path) -> PortfolioData:
     try:
         with metrics_path.open(encoding="utf-8") as metrics_file:
             metrics = json.load(metrics_file)
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise PortfolioDataError(
             f"Unable to read results/metrics.json: {exc}"
         ) from exc
+    if not isinstance(metrics, dict):
+        raise PortfolioDataError(
+            "Invalid results/metrics.json; expected a JSON object."
+        )
     missing_sections = REQUIRED_METRIC_SECTIONS - set(metrics)
     if missing_sections:
         raise PortfolioDataError(
