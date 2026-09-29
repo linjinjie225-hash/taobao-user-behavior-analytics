@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from dashboard.charts import category_chart
 from dashboard.data_loader import PortfolioDataError, load_portfolio_data
 
 
@@ -309,12 +310,42 @@ def test_load_portfolio_data_allows_category_behavior_ratio_above_one(
     assert data.category.loc[0, "buy_to_pv_rate"] == 1.5
 
 
-def test_load_portfolio_data_accepts_real_project_aggregates() -> None:
-    project_root = Path(__file__).resolve().parents[1]
+def test_load_portfolio_data_builds_chart_for_representative_category_ratios(
+    tmp_path: Path,
+) -> None:
+    write_fixture(tmp_path)
+    table_path = tmp_path / "results" / "tables" / "category_metrics.csv"
+    pd.DataFrame(
+        [
+            {
+                "category_id": "zero-view",
+                "pv": 0,
+                "cart": 0,
+                "fav": 0,
+                "buy": 1,
+                "active_users": 1,
+                "buy_to_pv_rate": float("nan"),
+                "events": 1,
+            },
+            {
+                "category_id": "ratio-above-one",
+                "pv": 4,
+                "cart": 1,
+                "fav": 0,
+                "buy": 6,
+                "active_users": 3,
+                "buy_to_pv_rate": 1.5,
+                "events": 11,
+            },
+        ]
+    ).to_csv(table_path, index=False)
 
-    data = load_portfolio_data(project_root)
+    data = load_portfolio_data(tmp_path)
+    figure = category_chart(data.category)
 
     undefined_rates = data.category[data.category["buy_to_pv_rate"].isna()]
-    assert not undefined_rates.empty
+    assert len(undefined_rates) == 1
     assert undefined_rates["pv"].eq(0).all()
-    assert data.category["buy_to_pv_rate"].max() > 1
+    assert data.category["buy_to_pv_rate"].max() == 1.5
+    assert "购买/浏览行为比=未定义" in figure.data[0].hovertemplate[0]
+    assert "购买/浏览行为比=1.50×" in figure.data[0].hovertemplate[1]
