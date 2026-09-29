@@ -63,7 +63,10 @@ NONNEGATIVE_NUMERIC_COLUMNS = {
 RATE_COLUMNS = {
     "user_funnel.csv": {"vs_view_rate"},
     "retention.csv": {"retention_rate"},
-    "category_metrics.csv": {"buy_to_pv_rate"},
+}
+
+RATIO_DENOMINATORS = {
+    "category_metrics.csv": {"buy_to_pv_rate": "pv"},
 }
 
 REQUIRED_METRIC_SECTIONS = {
@@ -76,26 +79,47 @@ REQUIRED_METRIC_SECTIONS = {
 
 
 def _validate_numeric_columns(table: pd.DataFrame, name: str) -> pd.DataFrame:
-    numeric_columns = NONNEGATIVE_NUMERIC_COLUMNS.get(name, set()) | RATE_COLUMNS.get(
-        name, set()
-    )
-    for column in sorted(numeric_columns):
+    for column in sorted(NONNEGATIVE_NUMERIC_COLUMNS.get(name, set())):
         converted = pd.to_numeric(table[column], errors="coerce")
         if converted.isna().any() or not all(map(isfinite, converted)):
             raise PortfolioDataError(
                 f"Invalid {name}; column {column} must contain finite numeric values"
             )
-        if column in NONNEGATIVE_NUMERIC_COLUMNS.get(name, set()) and (
-            converted < 0
-        ).any():
+        if (converted < 0).any():
             raise PortfolioDataError(
                 f"Invalid {name}; column {column} must be nonnegative"
             )
-        if column in RATE_COLUMNS.get(name, set()) and (
-            ((converted < 0) | (converted > 1)).any()
-        ):
+        table[column] = converted
+
+    for column in sorted(RATE_COLUMNS.get(name, set())):
+        converted = pd.to_numeric(table[column], errors="coerce")
+        if converted.isna().any() or not all(map(isfinite, converted)):
+            raise PortfolioDataError(
+                f"Invalid {name}; column {column} must contain finite numeric values"
+            )
+        if ((converted < 0) | (converted > 1)).any():
             raise PortfolioDataError(
                 f"Invalid {name}; column {column} must be between 0 and 1"
+            )
+        table[column] = converted
+
+    for column, denominator in sorted(RATIO_DENOMINATORS.get(name, {}).items()):
+        original = table[column]
+        converted = pd.to_numeric(original, errors="coerce")
+        malformed = original.notna() & converted.isna()
+        nonfinite = converted.notna() & ~converted.map(isfinite)
+        if malformed.any() or nonfinite.any():
+            raise PortfolioDataError(
+                f"Invalid {name}; column {column} must contain finite numeric values"
+            )
+        if (converted.isna() & table[denominator].ne(0)).any():
+            raise PortfolioDataError(
+                f"Invalid {name}; column {column} may be empty only when "
+                f"{denominator} is 0"
+            )
+        if (converted < 0).any():
+            raise PortfolioDataError(
+                f"Invalid {name}; column {column} must be nonnegative"
             )
         table[column] = converted
     return table

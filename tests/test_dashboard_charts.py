@@ -72,12 +72,32 @@ def test_category_chart_contains_purchase_data_in_reading_order() -> None:
     assert figure.data
     assert list(figure.data[0].y) == ["102", "101", "103"]
     assert figure.layout.xaxis.title.text == "购买行为量"
-    hover_template = figure.data[0].hovertemplate
-    assert "浏览行为量" in hover_template
-    assert "活跃用户数" in hover_template
-    assert "购买/浏览转化率" in hover_template
-    assert ":.1%" in hover_template
-    assert "订单" not in hover_template
+    hover_templates = figure.data[0].hovertemplate
+    hover_text = "\n".join(hover_templates)
+    assert "浏览行为量" in hover_text
+    assert "活跃用户数" in hover_text
+    assert "购买/浏览行为比" in hover_text
+    assert "×" in hover_text
+    assert "订单" not in hover_text
+
+
+def test_category_chart_marks_undefined_zero_view_ratio() -> None:
+    category = pd.DataFrame(
+        {
+            "category_id": [101, 102],
+            "pv": [0, 10],
+            "buy": [1, 2],
+            "active_users": [1, 4],
+            "buy_to_pv_rate": [float("nan"), 1.25],
+        }
+    )
+
+    figure = category_chart(category)
+
+    hover_templates = figure.data[0].hovertemplate
+    assert "购买/浏览行为比=未定义" in hover_templates[0]
+    assert "购买/浏览行为比=1.25×" in hover_templates[1]
+    assert "nan" not in "".join(hover_templates).lower()
 
 
 @pytest.mark.parametrize(

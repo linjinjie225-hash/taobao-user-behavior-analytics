@@ -239,3 +239,82 @@ def test_load_portfolio_data_preserves_header_only_tables(tmp_path: Path) -> Non
     assert data.funnel.empty
     assert data.retention.empty
     assert data.category.empty
+
+
+def test_load_portfolio_data_allows_undefined_ratio_for_zero_view_category(
+    tmp_path: Path,
+) -> None:
+    write_fixture(tmp_path)
+    table_path = tmp_path / "results" / "tables" / "category_metrics.csv"
+    table = pd.read_csv(table_path)
+    table.loc[0, "pv"] = 0
+    table.loc[0, "buy_to_pv_rate"] = float("nan")
+    table.to_csv(table_path, index=False)
+
+    data = load_portfolio_data(tmp_path)
+
+    assert pd.isna(data.category.loc[0, "buy_to_pv_rate"])
+
+
+def test_load_portfolio_data_rejects_undefined_ratio_with_category_views(
+    tmp_path: Path,
+) -> None:
+    write_fixture(tmp_path)
+    table_path = tmp_path / "results" / "tables" / "category_metrics.csv"
+    table = pd.read_csv(table_path)
+    table.loc[0, "buy_to_pv_rate"] = float("nan")
+    table.to_csv(table_path, index=False)
+
+    with pytest.raises(
+        PortfolioDataError,
+        match=r"category_metrics\.csv.*buy_to_pv_rate",
+    ):
+        load_portfolio_data(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "ratio",
+    [float("inf"), -0.01],
+    ids=["infinite", "negative"],
+)
+def test_load_portfolio_data_rejects_invalid_zero_view_category_ratio(
+    tmp_path: Path,
+    ratio: float,
+) -> None:
+    write_fixture(tmp_path)
+    table_path = tmp_path / "results" / "tables" / "category_metrics.csv"
+    table = pd.read_csv(table_path)
+    table.loc[0, "pv"] = 0
+    table.loc[0, "buy_to_pv_rate"] = ratio
+    table.to_csv(table_path, index=False)
+
+    with pytest.raises(
+        PortfolioDataError,
+        match=r"category_metrics\.csv.*buy_to_pv_rate",
+    ):
+        load_portfolio_data(tmp_path)
+
+
+def test_load_portfolio_data_allows_category_behavior_ratio_above_one(
+    tmp_path: Path,
+) -> None:
+    write_fixture(tmp_path)
+    table_path = tmp_path / "results" / "tables" / "category_metrics.csv"
+    table = pd.read_csv(table_path)
+    table.loc[0, "buy_to_pv_rate"] = 1.5
+    table.to_csv(table_path, index=False)
+
+    data = load_portfolio_data(tmp_path)
+
+    assert data.category.loc[0, "buy_to_pv_rate"] == 1.5
+
+
+def test_load_portfolio_data_accepts_real_project_aggregates() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+
+    data = load_portfolio_data(project_root)
+
+    undefined_rates = data.category[data.category["buy_to_pv_rate"].isna()]
+    assert not undefined_rates.empty
+    assert undefined_rates["pv"].eq(0).all()
+    assert data.category["buy_to_pv_rate"].max() > 1

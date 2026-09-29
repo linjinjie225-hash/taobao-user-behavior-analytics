@@ -126,7 +126,6 @@ def category_chart(frame: pd.DataFrame) -> go.Figure:
         hover_data={
             "pv": True,
             "active_users": True,
-            "buy_to_pv_rate": ":.1%",
         },
         color_discrete_sequence=[TEAL],
         labels={
@@ -134,9 +133,21 @@ def category_chart(frame: pd.DataFrame) -> go.Figure:
             "category_id": "类目 ID",
             "pv": "浏览行为量",
             "active_users": "活跃用户数",
-            "buy_to_pv_rate": "购买/浏览转化率",
+            "buy_to_pv_rate": "购买/浏览行为比",
         },
     )
-    figure.update_traces(marker_color=TEAL)
+    hover_templates = [
+        (
+            "购买行为量=%{x}<br>"
+            "类目 ID=%{y}<br>"
+            "浏览行为量=%{customdata[0]}<br>"
+            "活跃用户数=%{customdata[1]}<br>"
+            "购买/浏览行为比="
+            f"{'未定义' if pd.isna(ratio) else f'{ratio:.2f}×'}"
+            "<extra></extra>"
+        )
+        for ratio in ranked["buy_to_pv_rate"]
+    ]
+    figure.update_traces(marker_color=TEAL, hovertemplate=hover_templates)
     figure.update_layout(xaxis_title="购买行为量", yaxis_title="类目 ID")
     return _finish(figure, "购买行为量最高的类目")
