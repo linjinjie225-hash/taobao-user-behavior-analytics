@@ -1,0 +1,122 @@
+{
+  "data_quality": {
+    "input_rows": 1002393,
+    "missing_rows_removed": 0,
+    "invalid_id_rows_removed": 0,
+    "invalid_behavior_rows_removed": 0,
+    "out_of_range_rows_removed": 561,
+    "duplicate_rows_removed": 0,
+    "clean_rows": 1001832,
+    "rows_removed_total": 561
+  },
+  "basic": {
+    "events": 1001832,
+    "users": 9895,
+    "items": 399480,
+    "categories": 5761,
+    "behavior_events": {
+      "pv": 897440,
+      "cart": 56377,
+      "fav": 28029,
+      "buy": 19986
+    },
+    "date_start": "2017-11-25",
+    "date_end": "2017-12-03"
+  },
+  "funnel": {
+    "view_users": 9851,
+    "engaged_users": 8654,
+    "buyer_users": 6692,
+    "engagement_rate_vs_view_users": 0.8784894934524414,
+    "buyer_rate_vs_view_users": 0.6793218962541874,
+    "definition": "Distinct-user behavior-stage proxy; not a session-sequential funnel."
+  },
+  "retention": {
+    "d1_retention_rate": 0.7580596260737746,
+    "d1_eligible_users": 9895,
+    "d3_retention_rate": 0.7366292589222525,
+    "d3_eligible_users": 9891,
+    "d7_retention_rate": 0.9851886137468179,
+    "d7_eligible_users": 8642
+  },
+  "repeat_purchase": {
+    "buyers": 6692,
+    "buyers_with_2plus_buy_events": 4442,
+    "buyers_with_2plus_purchase_days": 3688,
+    "repeat_event_buyer_rate": 0.6637776449491931,
+    "repeat_day_buyer_rate": 0.5511057979677226,
+    "definition": "Purchase-event proxy because the source has no order ID."
+  },
+  "top_categories_by_buy_events": [
+    {
+      "category_id": 2735466,
+      "pv": 11708,
+      "buy": 375,
+      "buy_to_pv_rate": 0.032029381619405536,
+      "active_users": 2718
+    },
+    {
+      "category_id": 1464116,
+      "pv": 6757,
+      "buy": 351,
+      "buy_to_pv_rate": 0.05194612993932218,
+      "active_users": 1830
+    },
+    {
+      "category_id": 2885642,
+      "pv": 9263,
+      "buy": 330,
+      "buy_to_pv_rate": 0.035625607254669116,
+      "active_users": 1545
+    },
+    {
+      "category_id": 4145813,
+      "pv": 31660,
+      "buy": 322,
+      "buy_to_pv_rate": 0.010170562223626027,
+      "active_users": 3795
+    },
+    {
+      "category_id": 4756105,
+      "pv": 45704,
+      "buy": 287,
+      "buy_to_pv_rate": 0.006279537896026606,
+      "active_users": 4208
+    },
+    {
+      "category_id": 4801426,
+      "pv": 19313,
+      "buy": 268,
+      "buy_to_pv_rate": 0.013876663387355668,
+      "active_users": 3343
+    },
+    {
+      "category_id": 982926,
+      "pv": 29210,
+      "buy": 238,
+      "buy_to_pv_rate": 0.008147894556658678,
+      "active_users": 4025
+    },
+    {
+      "category_id": 1320293,
+      "pv": 18243,
+      "buy": 192,
+      "buy_to_pv_rate": 0.010524584772241408,
+      "active_users": 3570
+    },
+    {
+      "category_id": 2640118,
+      "pv": 7897,
+      "buy": 192,
+      "buy_to_pv_rate": 0.024313030264657465,
+      "active_users": 1376
+    },
+    {
+      "category_id": 4159072,
+      "pv": 1684,
+      "buy": 175,
+      "buy_to_pv_rate": 0.10391923990498812,
+      "active_users": 554
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "created_at_utc": "2026-09-18T19:01:07.033180+00:00",
+  "official_source": "https://tianchi.aliyun.com/dataset/649",
+  "mirror_download": "https://www.kaggle.com/api/v1/datasets/download/marwa80/userbehavior",
+  "official_license": "CC BY-NC-SA 4.0",
+  "official_date_window": [
+    "2017-11-25",
+    "2017-12-03"
+  ],
+  "official_columns": [
+    "user_id",
+    "item_id",
+    "category_id",
+    "behavior",
+    "timestamp"
+  ],
+  "sampling_rule": "user_id % 100 == 0",
+  "sampling_note": "All events for selected users are retained; this is a deterministic user-level sample.",
+  "source_rows_processed": 100150807,
+  "sample_rows": 1002393,
+  "sample_users": 9895,
+  "source_zip_bytes": 949807480,
+  "source_zip_sha256": "0fa6f4a0611113a2a7f6a4f1f5dfd58a4d65aaa65c7cfe98a0edf4b8c3403bee",
+  "sample_bytes": 9481994,
+  "sample_sha256": "be4921f295ad22cc63ec9119f6f04cb9e1eabbebe3571a5d930bd5c1481f6214"
+}
