@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="淘宝用户行为分析作品集：基于 1,001,832 条有效事件，展示独立行为阶段覆盖、每日活跃与短周期留存。">
+  <title>淘宝用户行为分析 | 数据分析作品集</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #091521;
+      --surface: #101f2e;
+      --surface-strong: #14283a;
+      --text: #f1f5f7;
+      --muted: #adbbc6;
+      --line: #2b3d4c;
+      --accent: #e37b57;
+      --accent-ink: #15100e;
+      --radius: 12px;
+      --max-width: 1180px;
+      --sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.7;
+      text-rendering: optimizeLegibility;
+    }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.22em;
+    }
+
+    a:hover {
+      color: var(--accent);
+    }
+
+    a:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .shell {
+      width: min(calc(100% - 48px), var(--max-width));
+      margin-inline: auto;
+    }
+
+    .site-header {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+    }
+
+    .brand {
+      color: var(--text);
+      font-weight: 760;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      white-space: nowrap;
+    }
+
+    .hero {
+      min-height: calc(100dvh - 73px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      align-items: center;
+      gap: clamp(48px, 6vw, 72px);
+      padding-block: clamp(64px, 10vh, 96px);
+    }
+
+    .eyebrow {
+      margin: 0 0 20px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 20ch;
+      margin-bottom: 24px;
+      font-size: clamp(2.7rem, 5vw, 4.1rem);
+      line-height: 0.99;
+      letter-spacing: -0.055em;
+      text-wrap: balance;
+    }
+
+    h2 {
+      margin-bottom: 18px;
+      font-size: clamp(2rem, 4.5vw, 4.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.045em;
+      text-wrap: balance;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: clamp(1.2rem, 2vw, 1.55rem);
+      line-height: 1.3;
+    }
+
+    .hero-copy {
+      max-width: 54ch;
+      margin-bottom: 32px;
+      color: var(--muted);
+      font-size: clamp(1.02rem, 1.5vw, 1.18rem);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-weight: 700;
+      line-height: 1.2;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+
+    .button.primary:hover {
+      background: #ee8a65;
+      color: var(--accent-ink);
+    }
+
+    .hero-result {
+      padding: 28px 0 28px 28px;
+      border-left: 1px solid var(--line);
+    }
+
+    .gap-value {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: clamp(3.8rem, 7vw, 6.2rem);
+      font-weight: 760;
+      line-height: 0.95;
+      letter-spacing: -0.07em;
+    }
+
+    .gap-label {
+      max-width: 24ch;
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .metrics {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: 1.25fr 0.85fr 1fr 1fr;
+      margin: 0;
+    }
+
+    .metric {
+      padding: 28px 24px 30px;
+      border-left: 1px solid var(--line);
+    }
+
+    .metric:first-child {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .metric dt {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .metric dd {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: clamp(1.5rem, 3vw, 2.45rem);
+      font-weight: 720;
+      line-height: 1;
+      letter-spacing: -0.045em;
+    }
+
+    .section {
+      padding-block: clamp(74px, 10vw, 124px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-intro {
+      max-width: 680px;
+      margin-bottom: 44px;
+    }
+
+    .section-intro p,
+    .annotation p,
+    .narrative p,
+    figcaption {
+      color: var(--muted);
+    }
+
+    .coverage-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(250px, 0.78fr);
+      gap: 32px;
+      align-items: end;
+    }
+
+    figure {
+      margin: 0;
+    }
+
+    .chart-frame {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #f7f7f7;
+    }
+
+    figcaption {
+      margin-top: 14px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .annotation {
+      padding: 4px 0 4px 24px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .annotation strong,
+    .narrative strong {
+      color: var(--text);
+    }
+
+    .activity-layout {
+      display: grid;
+      grid-template-columns: minmax(190px, 0.45fr) minmax(0, 1.55fr);
+      gap: 36px;
+      align-items: start;
+    }
+
+    .activity-note {
+      position: sticky;
+      top: 24px;
+      padding-top: 10px;
+    }
+
+    .activity-note p {
+      color: var(--muted);
+    }
+
+    .retention-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(300px, 1.1fr);
+      gap: clamp(30px, 6vw, 72px);
+      align-items: center;
+    }
+
+    .retention-layout .section-intro {
+      margin-bottom: 0;
+    }
+
+    .experiment {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1.45fr);
+      gap: clamp(32px, 7vw, 92px);
+      align-items: start;
+    }
+
+    .experiment h2 {
+      font-size: clamp(2.1rem, 4vw, 3.8rem);
+    }
+
+    .narrative {
+      display: grid;
+      gap: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .narrative article {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 24px;
+      padding-block: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .narrative h3,
+    .narrative p {
+      margin: 0;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.9em;
+    }
+
+    .deployment {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(270px, 0.8fr);
+      gap: 40px;
+      align-items: center;
+      padding: clamp(28px, 5vw, 52px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .deployment h2 {
+      margin-bottom: 12px;
+      font-size: clamp(1.8rem, 3.6vw, 3rem);
+    }
+
+    .deployment p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .deployment .actions {
+      justify-content: flex-end;
+    }
+
+    footer {
+      padding-block: 34px;
+    }
+
+    .footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(calc(100% - 32px), var(--max-width));
+      }
+
+      .nav {
+        min-height: 64px;
+      }
+
+      .nav-links a:not(:last-child) {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+        grid-template-columns: 1fr;
+        gap: 44px;
+        padding-block: 64px;
+      }
+
+      h1 {
+        font-size: clamp(2.55rem, 12vw, 4.2rem);
+      }
+
+      .hero-result {
+        padding: 24px 0 0;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+
+      .metric-row,
+      .coverage-layout,
+      .activity-layout,
+      .retention-layout,
+      .experiment,
+      .deployment {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-row {
+        padding-block: 10px;
+      }
+
+      .metric,
+      .metric:first-child {
+        padding: 22px 0;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+
+      .metric:first-child {
+        border-top: 0;
+      }
+
+      .coverage-layout,
+      .activity-layout,
+      .retention-layout,
+      .experiment {
+        gap: 30px;
+      }
+
+      .activity-note {
+        position: static;
+      }
+
+      .narrative article {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .deployment .actions {
+        justify-content: flex-start;
+      }
+
+      .footer-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+        --bg: #ffffff;
+        --surface: #f4f5f6;
+        --surface-strong: #eef0f2;
+        --text: #17212b;
+        --muted: #43515c;
+        --line: #c7cdd2;
+        --accent: #a84324;
+        --accent-ink: #ffffff;
+      }
+
+      body {
+        font-size: 11pt;
+      }
+
+      .site-header,
+      .actions {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-block: 40px;
+      }
+
+      .section {
+        padding-block: 42px;
+        break-inside: avoid;
+      }
+
+      .activity-note {
+        position: static;
+      }
+
+      a {
+        text-decoration: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="shell nav" aria-label="主要导航">
+      <a class="brand" href="../README.md">Taobao Behavior Study</a>
+      <div class="nav-links">
+        <a href="../README.md">项目说明</a>
+        <a href="../dashboard/app.py">看板源码</a>
+        <a href="https://tianchi.aliyun.com/dataset/649">官方数据集</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="shell hero" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Recruiter-ready analytics case study</p>
+        <h1 id="page-title">购买阶段覆盖 67.9% 低于兴趣阶段覆盖 87.8%</h1>
+        <p class="hero-copy">九天淘宝行为样本，使用 Pandas 计算、SQLite 复核，并以可复现产物呈现。</p>
+        <div class="actions">
+          <a class="button primary" href="../README.md">阅读完整项目</a>
+          <a class="button" href="../dashboard/app.py">审阅看板源码</a>
+        </div>
+      </div>
+      <aside class="hero-result" aria-label="核心覆盖差">
+        <span class="gap-value">19.9</span>
+        <p class="gap-label">个百分点的独立覆盖率差异，不是嵌套漏斗转化，也不是已计算的兴趣未购人群。</p>
+      </aside>
+    </section>
+
+    <section class="metrics" aria-label="项目核心指标">
+      <dl class="shell metric-row">
+        <div class="metric">
+          <dt>有效行为事件</dt>
+          <dd>1,001,832</dd>
+        </div>
+        <div class="metric">
+          <dt>去重用户</dt>
+          <dd>9,895</dd>
+        </div>
+        <div class="metric">
+          <dt>兴趣阶段覆盖</dt>
+          <dd>87.8%</dd>
+        </div>
+        <div class="metric">
+          <dt>购买阶段覆盖</dt>
+          <dd>67.9%</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="shell section" aria-labelledby="coverage-title">
+      <div class="section-intro">
+        <h2 id="coverage-title">覆盖，不是顺序转化</h2>
+        <p>浏览、收藏或加购、购买分别按去重用户统计。阶段之间不要求同一用户按顺序发生行为，也不保证集合嵌套。</p>
+      </div>
+      <div class="coverage-layout">
+        <figure>
+          <div class="chart-frame">
+            <img src="assets/user_funnel.png" width="1252" height="741" alt="浏览、兴趣与购买的独立行为阶段覆盖，不代表顺序转化漏斗">
+          </div>
+          <figcaption>独立行为阶段覆盖：兴趣阶段为收藏或加购用户数除以浏览用户数，购买阶段为购买用户数除以浏览用户数。</figcaption>
+        </figure>
+        <aside class="annotation">
+          <h3>如何阅读</h3>
+          <p><strong>87.8% 与 67.9%</strong> 共用浏览用户作为比较基准。19.9 个百分点是两个独立覆盖率的差，不能替代用户交集计算。</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="shell section" aria-labelledby="activity-title">
+      <div class="activity-layout">
+        <div class="activity-note">
+          <h2 id="activity-title">每日活跃趋势</h2>
+          <p>样本覆盖 2017-11-25 至 2017-12-03。末两日事件量明显抬升，但九天窗口不足以证明长期周期规律。</p>
+        </div>
+        <figure>
+          <div class="chart-frame">
+            <img src="assets/daily_activity.png" width="1413" height="739" alt="九天样本窗口内每日事件量与活跃用户数趋势">
+          </div>
+          <figcaption>深蓝线为全部行为事件量，橙线为购买行为事件量。双轴用于呈现量级不同的时间趋势。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="shell section" aria-labelledby="retention-title">
+      <div class="retention-layout">
+        <figure>
+          <div class="chart-frame">
+            <img src="assets/retention.png" width="1172" height="741" alt="按可观察后续天数筛选合格分母的 D1、D3、D7 活跃留存">
+          </div>
+          <figcaption>D1、D3、D7 分别使用 9,895、9,891、8,642 名合格用户作为分母。</figcaption>
+        </figure>
+        <div class="section-intro">
+          <h2 id="retention-title">留存必须带着分母读</h2>
+          <p>用户在 D0 后的目标日仍处于九天数据窗口内，才进入该目标日的合格分母。D7 的可观察用户更少，因此 98.5% 不能直接解读为留存随时间上升。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell section experiment" aria-labelledby="experiment-title">
+      <div>
+        <h2 id="experiment-title">从观察到下一步实验</h2>
+      </div>
+      <div class="narrative">
+        <article>
+          <h3>观察</h3>
+          <p>兴趣阶段覆盖高于购买阶段覆盖 19.9 个百分点。</p>
+        </article>
+        <article>
+          <h3>解释</h3>
+          <p>该差异比较两个独立覆盖率。当前结果没有计算两类用户的交集，也没有证明差异来自某个可触达人群。</p>
+        </article>
+        <article>
+          <h3>下一步实验</h3>
+          <p>先在用户层计算 <code>engaged_without_buy = engaged_users ∩ non_buyers</code>，验证规模、类目结构和时间分布，再决定是否定向并随机分流测试收藏或加购提醒。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell section" aria-labelledby="experience-title">
+      <div class="deployment">
+        <div>
+          <h2 id="experience-title">静态页负责可靠抵达，Streamlit 负责完整探索</h2>
+          <p>此页是无需运行环境的公开回退版本。交互式 Streamlit 看板将在公开部署后提供筛选、指标口径与更多图表；当前未上线，不将源码链接伪装成在线演示。</p>
+        </div>
+        <div class="actions">
+          <a class="button primary" href="../dashboard/app.py">查看 Streamlit 源码</a>
+          <a class="button" href="../docs/AI_COLLABORATION.md">查看 AI 协作边界</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-row">
+      <span>可复现淘宝用户行为分析</span>
+      <div class="footer-links">
+        <a href="../README.md">README</a>
+        <a href="https://tianchi.aliyun.com/dataset/649">阿里云天池 UserBehavior</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
