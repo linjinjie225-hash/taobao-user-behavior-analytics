@@ -1,6 +1,6 @@
 # 购买阶段覆盖67.9%，低于兴趣阶段覆盖87.8%：淘宝用户行为分析
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Pandas](https://img.shields.io/badge/Pandas-analysis-150458?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
 [![SQL](https://img.shields.io/badge/SQL-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
@@ -104,7 +104,7 @@ AI 用于候选问题、代码理解、边界检查和文字结构，不作为�
 
 ## 本地运行
 
-推荐使用 Python 3.10+。原始数据不随 Git 分发；如需从镜像重新采样，先运行获取脚本，再执行流水线。
+推荐使用 Python 3.11+。原始数据不随 Git 分发；如需从镜像重新采样，先运行获取脚本，再执行流水线。
 
 ```powershell
 python -m venv .venv

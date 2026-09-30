@@ -31,6 +31,18 @@ def build_reports() -> None:
     retention = metrics["retention"]
     repeat = metrics["repeat_purchase"]
     quality = metrics["data_quality"]
+    retention_summary = (
+        f"D1 {pct(retention['d1_retention_rate'])}"
+        f"（合格用户 {num(retention['d1_eligible_users'])}）；"
+        f"D3 {pct(retention['d3_retention_rate'])}"
+        f"（合格用户 {num(retention['d3_eligible_users'])}）；"
+        f"D7 {pct(retention['d7_retention_rate'])}"
+        f"（合格用户 {num(retention['d7_eligible_users'])}）"
+    )
+    retention_caveat = (
+        "各指标的合格分母随剩余观察窗口而不同，三者不可直接比较；"
+        "D7 较高不能解读为趋势上升。"
+    )
 
     report = f"""# 淘宝用户行为分析报告
 
@@ -50,7 +62,7 @@ def build_reports() -> None:
 - 有效行为：{num(base['events'])} 条；用户 {num(base['users'])} 名；商品 {num(base['items'])} 个；类目 {num(base['categories'])} 个。
 - 行为结构：浏览 {num(base['behavior_events']['pv'])} 次，加购 {num(base['behavior_events']['cart'])} 次，收藏 {num(base['behavior_events']['fav'])} 次，购买 {num(base['behavior_events']['buy'])} 次。
 - 行为阶段覆盖：收藏/加购用户占浏览用户 {pct(funnel['engagement_rate_vs_view_users'])}，购买用户占浏览用户 {pct(funnel['buyer_rate_vs_view_users'])}。
-- 短周期留存：D1 {pct(retention['d1_retention_rate'])}，D3 {pct(retention['d3_retention_rate'])}，D7 {pct(retention['d7_retention_rate'])}。
+- 短周期留存：{retention_summary}。{retention_caveat}
 - 购买行为代理：购买用户 {num(repeat['buyers'])} 名，其中 {pct(repeat['repeat_event_buyer_rate'])} 发生至少2次购买行为，{pct(repeat['repeat_day_buyer_rate'])} 在至少2个自然日出现购买行为。
 
 ## 4. 主要发现
@@ -81,13 +93,16 @@ def build_reports() -> None:
 
 ## 60秒项目介绍
 
-我使用阿里云天池公开的淘宝用户行为数据集做了一个电商用户行为分析项目。原数据约1亿条，为兼顾可复现性和本地处理效率，我按用户ID固定抽取约1%的用户并保留这些用户的全部行为，最终清洗得到 {num(base['events'])} 条有效记录。项目使用 Pandas 完成清洗、趋势、行为阶段、留存和短周期重复购买分析，再用 SQLite 编写SQL复核核心指标，最后输出可视化与运营建议。主要发现包括窗口内的日/小时活跃峰值、购买用户占浏览用户 {pct(funnel['buyer_rate_vs_view_users'])}，以及多日购买用户占购买用户 {pct(repeat['repeat_day_buyer_rate'])}。我也明确记录了数据只有9天、没有金额和订单ID等局限。
+我使用阿里云天池公开的淘宝用户行为数据集做了一个电商用户行为分析项目。原数据约1亿条，为兼顾可复现性和本地处理效率，我按用户ID固定抽取约1%的用户并保留这些用户的全部行为，最终清洗得到 {num(base['events'])} 条有效记录。
+
+项目使用 Pandas 完成清洗、趋势、行为阶段、留存和短周期重复购买分析，再用 SQLite 编写SQL复核核心指标，最后输出可视化与运营建议。主要发现包括窗口内的日/小时活跃峰值、购买用户占浏览用户 {pct(funnel['buyer_rate_vs_view_users'])}，以及多日购买用户占购买用户 {pct(repeat['repeat_day_buyer_rate'])}。数据局限包括窗口只有9天，以及缺少金额和订单ID。
 
 ## 你必须记住的数字
 
 - 有效记录：{num(base['events'])}；用户：{num(base['users'])}；商品：{num(base['items'])}；类目：{num(base['categories'])}。
 - 购买用户占浏览用户：{pct(funnel['buyer_rate_vs_view_users'])}。
-- D1 / D3 / D7 留存：{pct(retention['d1_retention_rate'])} / {pct(retention['d3_retention_rate'])} / {pct(retention['d7_retention_rate'])}。
+- D1 / D3 / D7 留存：{retention_summary}。
+- 留存口径：{retention_caveat}
 - 至少2个购买日的用户占购买用户：{pct(repeat['repeat_day_buyer_rate'])}。
 - 日峰值：{peak_day['event_date']}；小时峰值：{int(peak_hour['event_hour'])}:00。
 

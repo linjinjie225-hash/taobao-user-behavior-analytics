@@ -52,3 +52,31 @@ def test_readme_does_not_invent_an_engaged_nonbuyer_cohort() -> None:
     assert invented_cohort_claim.search(readme) is None
     assert independent_stage_caveat.search(readme)
     assert "交集" in readme and "engaged_without_buy" in readme
+
+
+def test_readme_runtime_matches_pinned_dependencies() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "Python-3.11%2B" in readme
+    assert "Python 3.11+" in readme
+    assert re.search(r"Python(?:-| )3\.10", readme) is None
+
+
+def test_generated_reports_show_retention_denominators_and_comparison_caveat() -> None:
+    metrics = json.loads((ROOT / "results/metrics.json").read_text(encoding="utf-8"))
+    retention = metrics["retention"]
+    documents = [
+        ROOT / "report/淘宝用户行为分析报告.md",
+        ROOT / "report/面试应急讲解.md",
+    ]
+
+    for path in documents:
+        content = path.read_text(encoding="utf-8")
+        for day in (1, 3, 7):
+            rate = re.escape(f"{retention[f'd{day}_retention_rate']:.1%}")
+            denominator = re.escape(f"{retention[f'd{day}_eligible_users']:,}")
+            assert re.search(rf"D{day}[^\n]{{0,80}}{rate}[^\n]{{0,80}}{denominator}", content)
+        assert all(
+            phrase in content
+            for phrase in ("分母", "观察窗口", "不可直接比较", "D7", "趋势上升")
+        )
