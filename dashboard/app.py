@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import sys
 
@@ -9,6 +10,7 @@ import streamlit as st
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DATA_ROOT = Path(os.environ.get("TAOBAO_DASHBOARD_ROOT", ROOT)).resolve()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -88,6 +90,9 @@ st.markdown(
         [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
         [data-testid="stHorizontalBlock"] > div { min-width: 46%; }
     }
+    @media (max-width: 560px) {
+        [data-testid="stHorizontalBlock"] > div { min-width: 100%; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -95,7 +100,7 @@ st.markdown(
 
 
 try:
-    portfolio = load_portfolio_data(ROOT)
+    portfolio = load_portfolio_data(DATA_ROOT)
 except PortfolioDataError as exc:
     st.error(f"聚合结果加载失败：{exc}")
     st.code("python src/run_pipeline.py", language="powershell")
@@ -113,5 +118,9 @@ PAGES = {
 
 st.sidebar.title("淘宝用户行为分析")
 selection = st.sidebar.radio("选择章节", list(PAGES), label_visibility="collapsed")
-st.sidebar.caption("项目发布后将在这里补充 GitHub 仓库链接。")
+basic = portfolio.metrics["basic"]
+st.sidebar.caption(
+    f"数据范围：{basic['date_start']} 至 {basic['date_end']}\n\n"
+    f"有效行为事件：{int(basic['events']):,}"
+)
 PAGES[selection](portfolio)

@@ -27,17 +27,31 @@ def _empty(message: str) -> None:
     st.info(message)
 
 
+def _sample_days(basic: dict[str, object]) -> int:
+    start = pd.Timestamp(str(basic["date_start"]))
+    end = pd.Timestamp(str(basic["date_end"]))
+    return int((end - start).days) + 1
+
+
 def render_executive(data: PortfolioData) -> None:
     """Render the recruiter-friendly executive summary."""
     basic = data.metrics["basic"]
     funnel = data.metrics["funnel"]
+    engagement_rate = float(funnel["engagement_rate_vs_view_users"])
+    buyer_rate = float(funnel["buyer_rate_vs_view_users"])
+    comparison = "低于" if buyer_rate <= engagement_rate else "高于"
+    coverage_gap = abs(engagement_rate - buyer_rate)
 
-    st.title("购买阶段覆盖67.9%，增长机会集中在有兴趣但未购买的人群中")
+    st.title(
+        f"购买阶段覆盖{_pct(buyer_rate)}，{comparison}兴趣阶段覆盖"
+        f"{_pct(engagement_rate)}"
+    )
     st.caption(
         "这里衡量的是去重用户的行为阶段覆盖，不是严格的会话顺序漏斗，也不代表真实转化率。"
     )
     st.write(
-        "分析范围为 2017-11-25 至 2017-12-03 的 1,001,832 条有效行为事件，"
+        f"分析范围为 {basic['date_start']} 至 {basic['date_end']} 的 "
+        f"{int(basic['events']):,} 条有效行为事件，"
         "使用 Pandas 完成清洗与分析，并用 SQL 交叉核验核心指标。"
     )
 
@@ -56,23 +70,37 @@ def render_executive(data: PortfolioData) -> None:
     if data.funnel.empty:
         _empty("暂无行为阶段数据。请重新运行数据流水线后查看阶段覆盖。")
     else:
-        st.plotly_chart(funnel_chart(data.funnel), width="stretch")
+        st.plotly_chart(funnel_chart(data.funnel), use_container_width=True)
 
     st.subheader("观察")
     st.write(
-        "8,654 名浏览用户出现收藏或加购行为，其中仍有一部分未进入购买阶段。"
-        "这组人群比单纯扩大流量更接近可验证的增长机会。"
+        f"兴趣阶段覆盖与购买阶段覆盖相差 {_pct(coverage_gap)}，即 "
+        f"{coverage_gap * 100:.1f} 个百分点。两者是分别计算的独立覆盖率，"
+        "不是嵌套人群，也不能据此推算有兴趣但未购买的人数。"
     )
     st.subheader("下一步实验")
     st.write(
-        "针对收藏或加购但未购买的用户设计分层提醒，并以购买阶段覆盖的增量进行对照评估。"
+        "先计算用户级 engaged_without_buy 交集人群并验证口径，"
+        "再决定是否对该人群进行分层触达与对照测试。"
     )
 
 
 def render_activity(data: PortfolioData) -> None:
-    st.title("22:00 出现样本内活跃峰值，周末两日行为量明显抬升")
+    basic = data.metrics["basic"]
+    sample_days = _sample_days(basic)
+    peak_hour = None
+    if not data.hourly.empty:
+        peak_hour = int(data.hourly.loc[data.hourly["events"].idxmax(), "event_hour"])
+
+    if peak_hour is None:
+        st.title("当前样本的小时活跃峰值尚不可用")
+        peak_label = "小时峰值"
+    else:
+        peak_label = f"{peak_hour:02d}:00"
+        st.title(f"{peak_label} 是当前样本内的活跃峰值")
     st.caption(
-        "22:00 是这 9 天样本合并后的行为量峰值，只描述该观察窗口，不外推为长期规律。"
+        f"{peak_label} 是 {basic['date_start']} 至 {basic['date_end']} 这 "
+        f"{sample_days} 天样本合并后的发现，只描述该观察窗口，不外推为长期规律。"
     )
     st.write(
         "先看每日规模变化，再看一天内的时段分布。两种粒度共同帮助确定触达实验的时间窗口。"
@@ -84,7 +112,7 @@ def render_activity(data: PortfolioData) -> None:
     else:
         st.plotly_chart(
             activity_chart(data.daily, "event_date", "每日行为量与购买行为量"),
-            width="stretch",
+            use_container_width=True,
         )
 
     st.subheader("小时行为节奏")
@@ -93,11 +121,11 @@ def render_activity(data: PortfolioData) -> None:
     else:
         st.plotly_chart(
             activity_chart(data.hourly, "event_hour", "小时行为量与购买行为量"),
-            width="stretch",
+            use_container_width=True,
         )
 
     st.info(
-        "实验建议：优先比较 20:00-22:00 与日间基准时段的提醒效果，"
+        "实验建议：优先比较样本峰值附近与日间基准时段的提醒效果，"
         "避免把单一峰值直接解释为因果机会。"
     )
 
@@ -122,7 +150,7 @@ def render_funnel(data: PortfolioData) -> None:
     if data.funnel.empty:
         _empty("暂无行为阶段数据。请重新运行数据流水线后查看阶段覆盖。")
     else:
-        st.plotly_chart(funnel_chart(data.funnel), width="stretch")
+        st.plotly_chart(funnel_chart(data.funnel), use_container_width=True)
 
     st.warning(
         "解读边界：购买用户表示样本期内至少出现一次购买行为的用户，"
@@ -131,16 +159,18 @@ def render_funnel(data: PortfolioData) -> None:
 
 
 def render_retention(data: PortfolioData) -> None:
+    basic = data.metrics["basic"]
     repeat = data.metrics["repeat_purchase"]
     st.title("短周期活跃留存稳定，重复购买代理仍需谨慎解释")
     st.caption(
-        "留存以用户首次出现日为起点，观察后续指定天是否仍有任一行为；窗口仅覆盖 9 天。"
+        "留存以用户首次出现日为起点，观察后续指定天是否仍有任一行为；"
+        f"窗口仅覆盖 {_sample_days(basic)} 天。"
     )
 
     if data.retention.empty:
         _empty("暂无留存聚合数据。请重新运行数据流水线后查看短周期留存。")
     else:
-        st.plotly_chart(retention_chart(data.retention), width="stretch")
+        st.plotly_chart(retention_chart(data.retention), use_container_width=True)
 
     st.subheader("重复购买代理")
     columns = st.columns(2)
@@ -177,7 +207,7 @@ def render_category(data: PortfolioData) -> None:
 
     figure = category_chart(data.category)
     figure.update_traces(marker_color="#f97316")
-    st.plotly_chart(figure, width="stretch")
+    st.plotly_chart(figure, use_container_width=True)
 
     st.subheader("购买行为量 Top 20")
     top_categories = data.category.nlargest(20, "buy")[
@@ -186,10 +216,11 @@ def render_category(data: PortfolioData) -> None:
     top_categories["buy_to_pv_rate"] = top_categories["buy_to_pv_rate"].map(
         lambda value: "未定义" if pd.isna(value) else f"{float(value):.3f}×"
     )
-    st.dataframe(top_categories, width="stretch", hide_index=True)
+    st.dataframe(top_categories, use_container_width=True, hide_index=True)
 
 
 def render_trust(data: PortfolioData) -> None:
+    basic = data.metrics["basic"]
     quality = data.metrics["data_quality"]
     st.title("数据可信度：结论可复现，边界也必须同时公开")
     st.caption(
@@ -215,6 +246,7 @@ def render_trust(data: PortfolioData) -> None:
 
     st.subheader("已知限制")
     st.warning(
-        "数据窗口仅为 2017-11-25 至 2017-12-03，且无金额、订单 ID、渠道和用户属性。"
+        f"数据窗口仅为 {basic['date_start']} 至 {basic['date_end']}，"
+        "且无金额、订单 ID、渠道和用户属性。"
         "因此不能计算 GMV、客单价或真实订单复购率，也不能据此做总体外推。"
     )
