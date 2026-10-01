@@ -1,4 +1,5 @@
 import json
+import tomllib
 from pathlib import Path
 
 import pandas as pd
@@ -151,6 +152,7 @@ def test_executive_summary_does_not_invent_an_engaged_nonbuyer_cohort(
     assert "其中仍有一部分未进入购买阶段" not in visible_text
     assert "收藏或加购但未购买的用户设计分层提醒" not in visible_text
     assert "20.0 个百分点" in visible_text
+    assert "相差 20.0%，即" not in visible_text
     assert "独立覆盖率" in visible_text
     assert "不是嵌套人群" in visible_text
     assert "engaged_without_buy" in visible_text
@@ -216,6 +218,21 @@ def test_category_page_keeps_behavior_ratio_distinct_from_conversion(
     assert "未定义" in explanatory_text
     assert len(app.get("plotly_chart")) == 1
     assert len(app.dataframe) == 1
+    displayed = app.dataframe[0].value
+    assert list(displayed.columns) == [
+        "类目ID",
+        "浏览行为量",
+        "购买行为量",
+        "购买/浏览行为比",
+        "活跃用户数",
+    ]
+    assert displayed.iloc[0].to_dict() == {
+        "类目ID": 101,
+        "浏览行为量": 100,
+        "购买行为量": 12,
+        "购买/浏览行为比": "0.120×",
+        "活跃用户数": 80,
+    }
 
 
 def test_trust_page_discloses_reproducibility_and_limitations(
@@ -259,3 +276,11 @@ def test_phone_layout_stacks_metric_and_column_blocks() -> None:
 
     assert "@media (max-width: 560px)" in source
     assert "min-width: 100%" in source
+
+
+def test_streamlit_disables_browser_usage_telemetry() -> None:
+    config = tomllib.loads(
+        (ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    )
+
+    assert config["browser"]["gatherUsageStats"] is False

@@ -56,6 +56,12 @@ def activity_chart(
         )
     )
     figure.update_layout(
+        xaxis={
+            "title": {"event_date": "日期", "event_hour": "小时"}.get(
+                x_column,
+                x_column,
+            )
+        },
         yaxis={"title": "行为量"},
         yaxis2={
             "title": "购买行为量",
@@ -78,7 +84,11 @@ def funnel_chart(frame: pd.DataFrame) -> go.Figure:
         color_discrete_sequence=[NAVY, TEAL, ORANGE],
     )
     figure.update_traces(textposition="outside")
-    figure.update_layout(showlegend=False, yaxis_title="用户数")
+    figure.update_layout(
+        showlegend=False,
+        xaxis_title="行为阶段",
+        yaxis_title="用户数",
+    )
     return _finish(figure, "用户行为阶段覆盖（非会话顺序漏斗）")
 
 
@@ -110,7 +120,10 @@ def category_chart(frame: pd.DataFrame) -> go.Figure:
     """Build a horizontal ranking of the twelve most-purchased categories."""
     if frame.empty:
         figure = go.Figure()
-        figure.update_layout(xaxis_title="购买行为量", yaxis_title="类目 ID")
+        figure.update_layout(
+            xaxis_title="购买行为量",
+            yaxis={"title": "类目 ID", "type": "category"},
+        )
         return _finish(figure, "购买行为量最高的类目")
 
     ranked = (
@@ -149,5 +162,14 @@ def category_chart(frame: pd.DataFrame) -> go.Figure:
         for ratio in ranked["buy_to_pv_rate"]
     ]
     figure.update_traces(marker_color=TEAL, hovertemplate=hover_templates)
-    figure.update_layout(xaxis_title="购买行为量", yaxis_title="类目 ID")
+    category_order = ranked["category_id"].tolist()
+    figure.update_layout(
+        xaxis_title="购买行为量",
+        yaxis={
+            "title": "类目 ID",
+            "type": "category",
+            "categoryorder": "array",
+            "categoryarray": category_order,
+        },
+    )
     return _finish(figure, "购买行为量最高的类目")

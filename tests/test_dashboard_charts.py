@@ -24,7 +24,22 @@ def test_activity_chart_contains_series_and_title() -> None:
     assert figure.data
     assert figure.layout.title.text == "每日活跃趋势"
     assert figure.data[1].name == "购买行为量"
+    assert figure.layout.xaxis.title.text == "日期"
     assert figure.layout.yaxis2.title.text == "购买行为量"
+
+
+def test_hourly_activity_chart_localizes_the_x_axis_title() -> None:
+    hourly = pd.DataFrame(
+        {
+            "event_hour": [9, 22],
+            "events": [10, 15],
+            "buy": [2, 3],
+        }
+    )
+
+    figure = activity_chart(hourly, "event_hour", "小时活跃趋势")
+
+    assert figure.layout.xaxis.title.text == "小时"
 
 
 def test_funnel_chart_contains_stage_coverage_data() -> None:
@@ -40,6 +55,8 @@ def test_funnel_chart_contains_stage_coverage_data() -> None:
 
     assert figure.data
     assert "非会话顺序漏斗" in figure.layout.title.text
+    assert figure.layout.xaxis.title.text == "行为阶段"
+    assert figure.layout.xaxis.title.text != "stage"
 
 
 def test_retention_chart_uses_percentage_axis() -> None:
@@ -71,6 +88,8 @@ def test_category_chart_contains_purchase_data_in_reading_order() -> None:
 
     assert figure.data
     assert list(figure.data[0].y) == ["102", "101", "103"]
+    assert figure.layout.yaxis.type == "category"
+    assert list(figure.layout.yaxis.categoryarray) == ["102", "101", "103"]
     assert figure.layout.xaxis.title.text == "购买行为量"
     hover_templates = figure.data[0].hovertemplate
     hover_text = "\n".join(hover_templates)
@@ -98,6 +117,14 @@ def test_category_chart_marks_undefined_zero_view_ratio() -> None:
     assert "购买/浏览行为比=未定义" in hover_templates[0]
     assert "购买/浏览行为比=1.25×" in hover_templates[1]
     assert "nan" not in "".join(hover_templates).lower()
+
+
+def test_empty_category_chart_keeps_a_categorical_axis() -> None:
+    columns = ["category_id", "pv", "buy", "active_users", "buy_to_pv_rate"]
+
+    figure = category_chart(pd.DataFrame(columns=columns))
+
+    assert figure.layout.yaxis.type == "category"
 
 
 @pytest.mark.parametrize(

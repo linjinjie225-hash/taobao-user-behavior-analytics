@@ -74,8 +74,8 @@ def render_executive(data: PortfolioData) -> None:
 
     st.subheader("观察")
     st.write(
-        f"兴趣阶段覆盖与购买阶段覆盖相差 {_pct(coverage_gap)}，即 "
-        f"{coverage_gap * 100:.1f} 个百分点。两者是分别计算的独立覆盖率，"
+        f"兴趣阶段覆盖与购买阶段覆盖相差 {coverage_gap * 100:.1f} 个百分点。"
+        "两者是分别计算的独立覆盖率，"
         "不是嵌套人群，也不能据此推算有兴趣但未购买的人数。"
     )
     st.subheader("下一步实验")
@@ -215,6 +215,15 @@ def render_category(data: PortfolioData) -> None:
     ].copy()
     top_categories["buy_to_pv_rate"] = top_categories["buy_to_pv_rate"].map(
         lambda value: "未定义" if pd.isna(value) else f"{float(value):.3f}×"
+    )
+    top_categories = top_categories.rename(
+        columns={
+            "category_id": "类目ID",
+            "pv": "浏览行为量",
+            "buy": "购买行为量",
+            "buy_to_pv_rate": "购买/浏览行为比",
+            "active_users": "活跃用户数",
+        }
     )
     st.dataframe(top_categories, use_container_width=True, hide_index=True)
 
