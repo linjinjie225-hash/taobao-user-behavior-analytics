@@ -71,7 +71,8 @@ def test_static_page_uses_expected_charts_alt_text_and_caveats():
     assert 'src="assets/user_funnel.png"' in page
     assert 'alt="浏览、兴趣与购买的独立行为阶段覆盖，不代表顺序转化漏斗"' in page
     assert 'src="assets/daily_activity.png"' in page
-    assert 'alt="九天样本窗口内每日事件量与活跃用户数趋势"' in page
+    assert 'alt="九天样本窗口内全部行为事件量与购买行为事件量趋势"' in page
+    assert 'alt="九天样本窗口内每日事件量与活跃用户数趋势"' not in page
     assert 'src="assets/retention.png"' in page
     assert 'alt="按可观察后续天数筛选合格分母的 D1、D3、D7 活跃留存"' in page
     assert "合格分母" in page
@@ -101,3 +102,15 @@ def test_static_page_has_required_responsive_breakpoint():
     page = _static_page()
 
     assert re.search(r"@media\s*\(max-width:\s*760px\)", page)
+
+
+def test_ci_invokes_pytest_as_a_python_module():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert re.search(
+        r"^\s*run:\s*python -m pytest -q\s*$",
+        workflow,
+        re.MULTILINE,
+    )
+    assert not re.search(r"^\s*run:\s*pytest\b", workflow, re.MULTILINE)
