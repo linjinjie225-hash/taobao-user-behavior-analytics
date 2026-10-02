@@ -94,8 +94,8 @@ def test_static_page_links_are_functional_and_deployment_copy_is_honest():
         if href.startswith(("http://", "https://", "mailto:")):
             continue
         assert (root / "site" / href).resolve().exists(), href
-    assert "公开部署后" in page
-    assert "当前未上线" in page
+    assert "打开交互看板" in page
+    assert "taobao-user-behavior-analytics-mad4xwnihdhcbf2fqvnrez.streamlit.app" in page
 
 
 def test_static_page_has_required_responsive_breakpoint():

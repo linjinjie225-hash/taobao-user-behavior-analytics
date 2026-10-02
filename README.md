@@ -13,13 +13,13 @@
 
 ## 在线演示
 
-当前可在仓库根目录本地启动交互式看板：
+在线访问：[淘宝用户行为分析 · Streamlit](https://taobao-user-behavior-analytics-mad4xwnihdhcbf2fqvnrez.streamlit.app/)
+
+也可以在仓库根目录本地启动交互式看板：
 
 ```powershell
 streamlit run dashboard/app.py
 ```
-
-托管演示地址只会在完成公开部署后添加；当前仓库不虚构尚未上线的 URL。
 
 ## 已核验指标
 
