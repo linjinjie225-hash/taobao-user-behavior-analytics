@@ -11,6 +11,7 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_ROOT = Path(os.environ.get("TAOBAO_DASHBOARD_ROOT", ROOT)).resolve()
+REPOSITORY_URL = "https://github.com/linjinjie225-hash/taobao-user-behavior-analytics"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -123,4 +124,5 @@ st.sidebar.caption(
     f"数据范围：{basic['date_start']} 至 {basic['date_end']}\n\n"
     f"有效行为事件：{int(basic['events']):,}"
 )
+st.sidebar.link_button("GitHub 源码", REPOSITORY_URL, use_container_width=True)
 PAGES[selection](portfolio)

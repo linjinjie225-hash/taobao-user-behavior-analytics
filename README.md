@@ -9,6 +9,8 @@
 
 这是一个可复现的淘宝用户行为分析项目：对 9 天、近百万条事件做清洗、行为阶段覆盖、活跃趋势、留存与类目分析，并以 Pandas 计算、SQLite/SQL 复核、Streamlit 展示。核心发现是购买阶段覆盖比兴趣阶段覆盖低 19.9 个百分点。
 
+公开仓库：[linjinjie225-hash/taobao-user-behavior-analytics](https://github.com/linjinjie225-hash/taobao-user-behavior-analytics)
+
 ## 在线演示
 
 当前可在仓库根目录本地启动交互式看板：
